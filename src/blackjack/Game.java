@@ -17,6 +17,7 @@ public class Game {
 
         newGame();
 
+        //TODO create to method : decideWinner()
         if(winner == null) {
             if(getTotal(guest) > getTotal(dealer)) {
                 winner = guest.getRole();
@@ -25,6 +26,7 @@ public class Game {
             }
         }
 
+        //TODO rename show() => printResult()
         show();
     }
 
@@ -56,6 +58,8 @@ public class Game {
         }
     }
 
+    //TODO refactoring function in common 
+    //between guestTurn() and dealerTurn()
     private void guestTurn() {
         while (true) {
             //show deck
@@ -95,7 +99,7 @@ public class Game {
     }
 
     private void dealerTurn() {
-        //faceUp
+        //TODO move faceUp into newGame()
         dealer.deck.get(1).setFaceUp(true);
 
         while (true) {
@@ -135,6 +139,7 @@ public class Game {
     private void dealCard(Gamer gamer) {
         int random = (int) (Math.random() * deck.getSize());
 
+        //TODO combine deck.getCard() and deck.remove() to deck.dealCard()
         gamer.deck.add(deck.getCard(random));
         deck.remove(random);
     }
