@@ -1,7 +1,6 @@
 package blackjack;
 
 import java.util.Scanner;
-import static blackjack.Print.*;
 
 public class Game {
     private Scanner scan;
@@ -17,17 +16,9 @@ public class Game {
 
         newGame();
 
-        //TODO create to method : decideWinner()
-        if(winner == null) {
-            if(getTotal(guest) > getTotal(dealer)) {
-                winner = guest.getRole();
-            } else if(getTotal(guest) < getTotal(dealer)) {
-                winner = dealer.getRole();
-            }
-        }
+        decideWinner();
 
-        //TODO rename show() => printResult()
-        show();
+        printResult();
     }
 
     private void init(Scanner scan) {
@@ -38,11 +29,22 @@ public class Game {
         this.options = "1)Hit 2)Stand 0)Surrender";
     }
 
+    private void decideWinner() {
+    	if(winner == null) {
+            if(getTotal(guest) > getTotal(dealer)) {
+                winner = guest.getRole();
+            } else if(getTotal(guest) < getTotal(dealer)) {
+                winner = dealer.getRole();
+            }
+        }
+    }
+    
     private void newGame() {
         dealCard();
 
-        //guest turn
-        guestTurn();
+        turn(guest);
+        dealer.deck.get(1).setFaceUp(true);
+        
         if(guest.getSurrender()) {
             winner = dealer.getRole();
             return;
@@ -50,84 +52,84 @@ public class Game {
             winner = dealer.getRole();
         }
 
-        //dealer turn
         if(winner != null) return;
-        dealerTurn();
+                
+        turn(dealer);
         if(dealer.getBust()) {
             winner = guest.getRole();
         }
     }
-
-    //TODO refactoring function in common 
-    //between guestTurn() and dealerTurn()
-    private void guestTurn() {
-        while (true) {
-            //show deck
-            show("Guest");
-
-            //check total
-            int total = getTotal(guest);
-            if(total > 21) {
-                guest.setBust(true);
-                bust(guest);
-                break;
-            } else if(total == 21) {
-                blackjack(guest);
+    
+    private void turn(Gamer gamer) {
+        while(true) {
+            printStatus(gamer.getRole());
+            
+            if(checkTotal(gamer)) {
                 break;
             }
 
-            //select option
-            System.out.println(options);
-            int input = scan.nextInt();
+            if(gamer instanceof Guest) {
+                System.out.println(options);
+                if(guestTurn(scan.nextInt())) break;
+            }
 
-            if(input == 0) {
-                guest.setSurrender(true);
-                surrender(guest);
-                break;
-
-            } else if(input == 2) {
-                stand(guest);
-                break;
-
-            } else if(input == 1) {
-                hit(guest);
-                dealCard(guest);
-            } else {
-                wrongInput();
+            if(gamer instanceof Dealer) {
+                if(dealerTurn()) break;
             }
         }
     }
+    
+   private boolean checkTotal(Gamer gamer) {
+	   boolean res = false;
+	   int total = getTotal(gamer);
+	   
+	   if(total > 21) {
+		   gamer.setBust(true);
+		   Print.bust(gamer);
+		   res = true;
+		   
+	   } else if(total == 21) {
+		   Print.blackjack(gamer);
+		   res = true;
+	   }
+	   
+	   return res;
+   }
 
-    private void dealerTurn() {
-        //TODO move faceUp into newGame()
-        dealer.deck.get(1).setFaceUp(true);
-
-        while (true) {
-            //show deck
-            show("Dealer");
-
-            //check total
-            int total = getTotal(dealer);
-            if (total > 21) {
-                dealer.setBust(true);
-                bust(dealer);
-                break;
-            } else if (total == 21) {
-                blackjack(dealer);
-                break;
-            }
-
-            // hit or stand
-            if(total < 17) {
-                hit(dealer);
-                dealCard(dealer);
-            } else {
-                stand(dealer);
-                break;
-            }
-        }
+    private boolean guestTurn(int value) {
+    	boolean res = false;
+    	
+    	if(value == 0) {
+    		guest.setSurrender(true);
+    		Print.surrender(guest);
+    		res = true;
+    	} else if(value == 2) {
+    		Print.stand(guest);
+    		res = true;
+    	} else if(value == 1) {
+    		Print.hit(guest);
+    		dealCard(guest);
+    	} else {
+    		Print.wrongInput();
+    	}
+    	
+    	return res;
     }
-
+    
+    private boolean dealerTurn() {
+    	boolean res = false;
+    	int total = getTotal(dealer);
+    	
+    	if(total < 17) {
+    		Print.hit(dealer);
+    		dealCard(dealer);
+    	} else {
+    		Print.stand(dealer);
+    		res = true;
+    	}
+    	return res;
+    }
+    
     private void dealCard() {
        for (int i = 0; i < 2; i++) {
            dealCard(guest);
@@ -139,9 +141,7 @@ public class Game {
     private void dealCard(Gamer gamer) {
         int random = (int) (Math.random() * deck.getSize());
 
-        //TODO combine deck.getCard() and deck.remove() to deck.dealCard()
-        gamer.deck.add(deck.getCard(random));
-        deck.remove(random);
+        gamer.deck.add(deck.dealCard(random));
     }
 
     private int getTotal(Gamer gamer) {
@@ -152,7 +152,7 @@ public class Game {
         return res;
     }
 
-    private void show() {
+    private void printResult() {
         String res = String.format(
                 "\n============Result============\n" +
                 "Dealer (%d)\n\t" + dealer.deck + "\n" +
@@ -161,11 +161,11 @@ public class Game {
                 , getTotal(dealer), getTotal(guest)
         );
 
-        message(res);
-        message(winner != null ? "★ Winner : " + winner : "Push");
+        Print.message(res);
+        Print.message(winner != null ? "★ Winner : " + winner : "Push");
     }
 
-    private void show(String label) {
+    private void printStatus(String label) {
         String res = String.format(
                 "\n------------%s------------\n" +
                 "Dealer\n\t" + dealer.deck + "\n" +
@@ -173,6 +173,6 @@ public class Game {
                 ,label
         );
 
-        message(res);
+        Print.message(res);
     }
 }

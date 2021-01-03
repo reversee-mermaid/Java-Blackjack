@@ -23,13 +23,11 @@ public class Deck {
 
         this.deck = deck;
     }
-
-    public void remove(int i) {
-        deck.remove(i);
-    }
-
-    public Card getCard(int i) {
-        return deck.get(i);
+    
+    public Card dealCard(int i) {
+    	Card temp = deck.get(i);
+    	deck.remove(i);
+    	return temp;
     }
 
     int getSize() {
